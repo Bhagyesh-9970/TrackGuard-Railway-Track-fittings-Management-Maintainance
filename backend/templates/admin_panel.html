@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IRF Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+
+/* Updated Header Bar Layout */
+.header-bar {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    margin-bottom: 25px;
+    position: relative;
+}
+
+/* Center the title */
+.admin-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    
+    /* 🔥 Better looking font */
+    font-size: 32px;
+    font-weight: 700;
+    font-family: 'Poppins', 'Segoe UI', sans-serif;
+    letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #0d47a1, #1976d2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Right-side buttons */
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.header-actions .toggle-dark {
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--text);
+    transition: 0.3s;
+}
+
+.header-actions .toggle-dark:hover {
+    transform: scale(1.15);
+}
+
+:root {
+  --sidebar-bg:#0d47a1;
+  --main-bg:#f4f6fb;
+  --card-bg:#ffffff;
+  --text:#1b1b1d;
+  --text-light:#6b7280;
+  --radius:14px;
+  --primary:#0d47a1;
+  --shadow:0 4px 14px rgba(0,0,0,0.08);
+}
+.dark {
+  --main-bg:#0f172a;
+  --card-bg:#1e293b;
+  --text:#e2e8f0;
+  --text-light:#94a3b8;
+  --shadow:0 4px 14px rgba(255,255,255,0.04);
+}
+
+body { margin:0; background:var(--main-bg); font-family:"Segoe UI",sans-serif; color:var(--text); display:flex; }
+
+/* Sidebar */
+.sidebar { width:250px; background:var(--sidebar-bg); height:100vh; position:fixed; color:white; padding:25px 20px; }
+.sidebar h2 { display:flex; align-items:center; gap:10px; margin:0 0 20px 0; }
+.sidebar a { display:block; padding:12px 15px; margin:6px 0; color:white; text-decoration:none; border-radius:var(--radius); }
+.sidebar a:hover { background:#1565c0; }
+
+/* Main */
+.main { margin-left:260px; padding:30px; width:calc(100% - 260px); }
+.card { background:var(--card-bg); padding:20px; border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:20px; }
+
+/* header */
+.header-actions { display:flex; gap:12px; align-items:center; }
+
+/* ai card */
+.ai-card { background: linear-gradient(135deg, rgba(13,71,161,0.17), rgba(255,255,255,0.06)); border: 1px solid rgba(255,255,255,0.18); backdrop-filter: blur(8px); }
+.ai-header { display:flex; align-items:center; gap:12px; }
+.ai-header i { font-size:26px; color:#0d47a1; }
+.ai-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin:15px 0 20px 0; }
+.ai-box { padding:14px; border-radius:12px; background:var(--card-bg); text-align:center; box-shadow:var(--shadow); }
+.ai-box .label { margin:0; font-size:13px; color:var(--text-light); }
+.ai-box .value { margin:8px 0; font-size:22px; font-weight:700; }
+.trend { font-size:12px; display:block; margin-top:-4px; }
+.trend.up { color:#16a34a; } .trend.down { color:#dc2626; } .trend.neutral { color:#6366f1; }
+
+/* toolbar */
+.toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
+.search-box input { padding:10px; border-radius:10px; width:260px; border:1px solid #cbd5e1; }
+select { padding:8px; border-radius:8px; border:1px solid #cbd5e1; }
+.btn { padding:10px 15px; border-radius:10px; cursor:pointer; border:none; }
+.btn-primary { background:var(--primary); color:white; } .btn-danger { background:#e11d48; color:white; } .btn-secondary { background:#e2e8f0; }
+
+/* table */
+table { width:100%; border-collapse:collapse; }
+th, td { padding:12px; border-bottom:1px solid #e2e8f0; }
+th { background:#f1f5f9; cursor:pointer; }
+.action-btns button { margin-right:6px; }
+
+/* modal */
+.modal-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; }
+.modal { width:550px; background:var(--card-bg); padding:25px; border-radius:var(--radius); box-shadow:var(--shadow); }
+.modal input, .modal select { width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:12px; }
+
+/* chat widget */
+.chat-btn { position:fixed; right:22px; bottom:22px; background:#0d47a1; color:white; border-radius:50%; width:56px; height:56px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(13,71,161,0.25); cursor:pointer; z-index:9999; }
+.chat-panel { position:fixed; right:22px; bottom:92px; width:360px; max-height:70vh; background:var(--card-bg); border-radius:12px; box-shadow:var(--shadow); overflow:hidden; display:none; flex-direction:column; z-index:9999; }
+.chat-header { padding:12px 14px; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg,#eef6ff,#fff); border-bottom:1px solid #eef2f7; }
+.chat-body { padding:12px; overflow:auto; flex:1; background:transparent; }
+.chat-message { margin-bottom:10px; }
+.chat-message.user { text-align:right; }
+.chat-message .bubble { display:inline-block; padding:8px 12px; border-radius:12px; max-width:85%; }
+.chat-message.user .bubble { background:#0d47a1; color:white; border-bottom-right-radius:4px; }
+.chat-message.bot .bubble { background:#eef2ff; color:#0d47a1; border-bottom-left-radius:4px; }
+.chat-input { padding:10px; border-top:1px solid #eef2f7; display:flex; gap:8px; }
+.chat-input input { flex:1; padding:10px; border-radius:8px; border:1px solid #cbd5e1; }
+
+/* responsive */
+@media(max-width:900px){ .ai-metrics { grid-template-columns:repeat(2,1fr); } .sidebar{display:none} .main{margin-left:20px;width:calc(100% - 40px);} }
+</style>
+</head>
+
+<body>
+
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h2><i class="fas fa-train"></i> IRF Admin</h2>
+  <a href="#"><i class="fas fa-chart-line"></i> Overview</a>
+  <a href="#"><i class="fas fa-industry"></i> Vendors</a>
+  <a href="#"><i class="fas fa-users"></i> Users</a>
+  <a href="/dashboard"><i class="fas fa-arrow-left"></i> Dashboard</a>
+  <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h1>  Admin Control Panel</h1>
+    <div class="header-actions">
+      <i class="fas fa-moon toggle-dark" onclick="toggleDark()"></i>
+      <button class="btn btn-primary" onclick="openModal()">+ Add Vendor</button>
+    </div>
+  </div>
+
+  <!-- AI Summary (same premium) -->
+  <div class="card ai-card">
+    <div class="ai-header"><i class="fas fa-brain"></i><h3>AI Performance Insights</h3></div>
+
+    <div class="ai-metrics">
+      <div class="ai-box"><p class="label">Avg Performance</p><p class="value" id="aiAvg">--%</p><span class="trend" id="aiAvgTrend">Analyzing...</span></div>
+      <div class="ai-box"><p class="label">Top Vendor</p><p class="value" id="aiBest">---</p><span class="trend up" id="aiBestScore"></span></div>
+      <div class="ai-box"><p class="label">Vendors at Risk</p><p class="value" id="aiRiskCount">0</p><span class="trend down">Attention</span></div>
+      <div class="ai-box"><p class="label">AI Confidence</p><p class="value" id="aiConfidence">--%</p><span class="trend neutral">Stable</span></div>
+    </div>
+
+    <div class="ai-analysis">
+      <h4>Summary</h4>
+      <p id="aiText">Analyzing vendor performance…</p>
+      <h4>Recommendations</h4>
+      <ul id="aiRecs"></ul>
+    </div>
+  </div>
+
+  <!-- Vendor Table -->
+  <div class="card">
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="search" placeholder="Search vendor..." onkeyup="filterVendors()">
+      </div>
+
+      <div>
+        <button class="btn btn-secondary" onclick="exportReport('csv')">Export CSV</button>
+        <button class="btn btn-secondary" onclick="exportReport('excel')">Export Excel</button>
+        <button class="btn btn-secondary" onclick="exportReport('pdf')">Export PDF</button>
+      </div>
+    </div>
+
+    <table id="vendorTable">
+      <thead>
+        <tr>
+          <th onclick="sortTable(0)">Vendor</th>
+          <th onclick="sortTable(1)">Date</th>
+          <th onclick="sortTable(2)">Quality</th>
+          <th onclick="sortTable(3)">Delivery</th>
+          <th onclick="sortTable(4)">Overall</th>
+          <th onclick="sortTable(5)">Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <h3>System Settings</h3>
+    <label>Retention Period</label>
+    <select id="retention"><option>1 year</option><option>3 years</option><option>5 years</option><option>10 years</option></select>
+    <br><br>
+    <label>Backup Frequency</label>
+    <select id="backup"><option>Daily</option><option>Weekly</option><option>Monthly</option></select>
+    <br><br>
+    <label>Inspection Interval</label>
+    <input id="interval" type="number" min="1" max="24">
+    <br><br>
+    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle">Add Vendor</h3>
+    <input id="name" placeholder="Vendor Name">
+    <input id="date" type="date">
+    <input id="quality" type="number" min="0" max="100" placeholder="Quality %">
+    <input id="delivery" type="number" min="0" max="100" placeholder="Delivery %">
+    <input id="overall" type="number" min="0" max="100" placeholder="Overall %">
+    <select id="status"><option>Approved</option><option>Under Review</option><option>Rejected</option></select>
+    <div style="text-align:right;margin-top:15px;">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveVendor()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chat button + panel -->
+<div class="chat-btn" onclick="toggleChat()" title="AI Assistant"><i class="fas fa-robot"></i></div>
+
+<div class="chat-panel" id="chatPanel" role="region" aria-label="AI Assistant">
+  <div class="chat-header">
+    <div><strong>AI Assistant</strong><div style="font-size:12px;color:var(--text-light)">Ask about vendors, risk, or reports</div></div>
+    <div><button class="btn btn-secondary" onclick="clearChat()">Clear</button></div>
+  </div>
+
+  <div class="chat-body" id="chatBody"></div>
+
+  <div class="chat-input">
+    <input type="text" id="chatInput" placeholder="Ask something like 'summary' or 'top'..." onkeydown="if(event.key==='Enter') sendChat()">
+    <button class="btn btn-primary" onclick="sendChat()">Send</button>
+  </div>
+</div>
+
+<script>
+/* -------------------------
+   Utility + state
+--------------------------*/
+let vendors = [];
+let editId = null;
+
+/* -------------------------
+   Dark mode
+--------------------------*/
+function toggleDark(){ document.body.classList.toggle("dark"); }
+
+/* -------------------------
+   Load Vendors
+--------------------------*/
+async function loadVendors(){
+  try{
+    const r = await fetch("/api/admin/vendors/list");
+    vendors = await r.json();
+  }catch(e){
+    vendors = [];
+    console.error(e);
+  }
+  renderVendors(vendors);
+  generateAISummary();
+}
+
+/* render vendors */
+function renderVendors(list){
+  const tbody = document.querySelector("#vendorTable tbody");
+  tbody.innerHTML = "";
+  list.forEach(v=>{
+    tbody.innerHTML += `
+      <tr>
+        <td>${escapeHtml(v.name)}</td>
+        <td>${v.evaluation_date || ''}</td>
+        <td>${v.quality_score}%</td>
+        <td>${v.delivery_score}%</td>
+        <td>${v.overall_rating}%</td>
+        <td>${escapeHtml(v.status)}</td>
+        <td class="action-btns">
+          <button class="btn btn-primary" onclick="editVendor(${v.id})"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-danger" onclick="deleteVendor(${v.id})"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+  });
+}
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* -------------------------
+   AI SUMMARY (improved)
+--------------------------*/
+function generateAISummary(){
+  const aiText = document.getElementById("aiText");
+  const aiRecs = document.getElementById("aiRecs");
+  if(!vendors || vendors.length===0){
+    aiText.innerText = "No vendor data available yet.";
+    aiRecs.innerHTML = "<li>Import vendors or add new ones to get AI insights.</li>";
+    document.getElementById("aiAvg").innerText = "--%";
+    document.getElementById("aiBest").innerText = "---";
+    document.getElementById("aiRiskCount").innerText = "0";
+    document.getElementById("aiConfidence").innerText = "--%";
+    return;
+  }
+
+  const avg = vendors.reduce((a,b)=>a + (b.overall_rating||0),0) / vendors.length;
+  const best = vendors.reduce((a,b)=> a.overall_rating > b.overall_rating ? a : b );
+  const risks = vendors.filter(v=> (v.overall_rating||0) < 40 );
+
+  document.getElementById("aiAvg").innerText = avg.toFixed(1) + "%";
+  document.getElementById("aiBest").innerText = best ? best.name : "---";
+  document.getElementById("aiRiskCount").innerText = risks.length;
+  document.getElementById("aiConfidence").innerText = (85 + Math.random()*10).toFixed(1) + "%";
+
+  document.getElementById("aiAvgTrend").innerHTML = avg >= 70
+    ? "<span class='trend up'>▲ Stable / Improving</span>"
+    : "<span class='trend down'>▼ Needs Attention</span>";
+
+  aiText.innerHTML = `Analyzed <b>${vendors.length}</b> vendors. Average overall rating is <b>${avg.toFixed(1)}%</b>. Top vendor: <b>${best.name}</b> (${best.overall_rating}%).`;
+
+  const recs = [];
+  if(avg < 65) recs.push("Average performance below 65% — run targeted quality audits and vendor meetings.");
+  if(risks.length) recs.push(`${risks.length} vendor(s) flagged under 40% — schedule immediate inspections.`);
+  if(best && best.overall_rating > 90) recs.push(`Consider contract extension or incentives for ${best.name}.`);
+  if(recs.length===0) recs.push("No immediate actions suggested. Keep monitoring.");
+
+  aiRecs.innerHTML = recs.map(r=>`<li>${r}</li>`).join("");
+}
+
+/* -------------------------
+   Search + filter
+--------------------------*/
+function filterVendors(){
+  const q = document.getElementById("search").value.toLowerCase();
+  const filtered = vendors.filter(v=> (v.name||'').toLowerCase().includes(q) || (v.status||'').toLowerCase().includes(q));
+  renderVendors(filtered);
+}
+
+/* -------------------------
+   Sorting
+--------------------------*/
+function sortTable(col){
+  vendors.sort((a,b)=>{
+    const A = Object.values(a)[col];
+    const B = Object.values(b)[col];
+    if(typeof A === 'string') return A.localeCompare(B);
+    return (A||0) - (B||0);
+  });
+  renderVendors(vendors);
+}
+
+/* -------------------------
+   Export report (calls backend)
+--------------------------*/
+async function exportReport(type){
+  const url = `/api/admin/reports/export?type=${encodeURIComponent(type)}`;
+  try{
+    const res = await fetch(url);
+    if(!res.ok) {
+      const err = await res.json().catch(()=>({error:"Export failed"}));
+      alert(err.error || "Export failed");
+      return;
+    }
+    const blob = await res.blob();
+    const disp = res.headers.get('Content-Disposition') || '';
+    // choose filename from header or fallback
+    let filename = `vendors_report.${ type === 'excel' ? 'xlsx' : (type==='pdf' ? 'pdf' : 'csv') }`;
+    const match = /filename="?([^"]+)"?/.exec(disp);
+    if(match) filename = match[1];
+
+    const urlBlob = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = urlBlob;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(urlBlob);
+  }catch(e){
+    console.error(e);
+    alert("Export failed: " + e.message);
+  }
+}
+
+/* -------------------------
+   Settings load/save
+--------------------------*/
+async function loadSettings(){
+  try{
+    const r = await fetch("/api/admin/settings/get");
+    const s = await r.json();
+    if(s){
+      document.getElementById("retention").value = s.data_retention || "3 years";
+      document.getElementById("backup").value = s.auto_backup || "Weekly";
+      document.getElementById("interval").value = s.inspection_interval || 6;
+    }
+  }catch(e){ console.warn("Could not load settings", e); }
+}
+
+async function saveSettings(){
+  try{
+    await fetch("/api/admin/settings/update", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        data_retention: document.getElementById("retention").value,
+        auto_backup: document.getElementById("backup").value,
+        inspection_interval: parseInt(document.getElementById("interval").value||6)
+      })
+    });
+    alert("Settings updated");
+  }catch(e){ alert("Save failed"); }
+}
+
+/* -------------------------
+   Modal CRUD
+--------------------------*/
+function openModal(){ document.getElementById("modalBg").style.display = "flex"; editId = null; document.getElementById("modalTitle").innerText = "Add Vendor"; }
+function closeModal(){ document.getElementById("modalBg").style.display = "none"; }
+
+async function saveVendor(){
+  const payload = {
+    name: document.getElementById("name").value,
+    evaluation_date: document.getElementById("date").value,
+    quality_score: parseInt(document.getElementById("quality").value||0),
+    delivery_score: parseInt(document.getElementById("delivery").value||0),
+    overall_rating: parseInt(document.getElementById("overall").value||0),
+    status: document.getElementById("status").value
+  };
+
+  try{
+    if(editId){
+      await fetch(`/api/admin/vendors/${editId}`, {method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)});
+    } else {
+      await fetch(`/api/admin/vendors`, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)});
+    }
+    closeModal();
+    await loadVendors();
+  }catch(e){
+    console.error(e);
+    alert("Save failed");
+  }
+}
+
+async function deleteVendor(id){
+  if(!confirm("Delete vendor?")) return;
+  await fetch(`/api/admin/vendors/${id}`, {method:"DELETE"});
+  await loadVendors();
+}
+
+function editVendor(id){
+  const v = vendors.find(x=>x.id===id);
+  if(!v) return;
+  editId = id;
+  document.getElementById("modalTitle").innerText = "Edit Vendor";
+  document.getElementById("name").value = v.name || "";
+  document.getElementById("date").value = v.evaluation_date || "";
+  document.getElementById("quality").value = v.quality_score || 0;
+  document.getElementById("delivery").value = v.delivery_score || 0;
+  document.getElementById("overall").value = v.overall_rating || 0;
+  document.getElementById("status").value = v.status || "Under Review";
+  openModal();
+}
+
+/* -------------------------
+   AI Chat UI (client)
+--------------------------*/
+function toggleChat(){
+  const panel = document.getElementById("chatPanel");
+  panel.style.display = (panel.style.display === "flex") ? "none" : "flex";
+  if(panel.style.display === "flex") panel.querySelector(".chat-body").scrollTop = panel.querySelector(".chat-body").scrollHeight;
+}
+
+function clearChat(){
+  document.getElementById("chatBody").innerHTML = "";
+}
+
+async function sendChat(){
+  const input = document.getElementById("chatInput");
+  const text = input.value.trim();
+  if(!text) return;
+  appendChat("user", text);
+  input.value = "";
+  appendChat("bot", "… thinking");
+
+  try{
+    const res = await fetch("/api/admin/chat", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({message: text})
+    });
+    const data = await res.json();
+    // replace last bot 'thinking' with actual content
+    const body = document.getElementById("chatBody");
+    const lastBot = body.querySelector(".chat-message.bot:last-child .bubble");
+    if(lastBot) lastBot.innerText = data.reply || "No reply";
+    body.scrollTop = body.scrollHeight;
+  }catch(e){
+    console.error(e);
+    const body = document.getElementById("chatBody");
+    const lastBot = body.querySelector(".chat-message.bot:last-child .bubble");
+    if(lastBot) lastBot.innerText = "Error: could not contact server";
+  }
+}
+
+function appendChat(who, text){
+  const body = document.getElementById("chatBody");
+  const div = document.createElement("div");
+  div.className = "chat-message " + (who==="user" ? "user" : "bot");
+  div.innerHTML = `<div class="bubble">${escapeHtml(text)}</div>`;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+/* -------------------------
+   Logout
+--------------------------*/
+async function logout(){ await fetch("/api/auth/logout"); window.location = "/login"; }
+
+/* -------------------------
+   Initial load
+--------------------------*/
+(async function(){
+  await loadVendors();
+  await loadSettings();
+})();
+</script>
+</body>
+</html>

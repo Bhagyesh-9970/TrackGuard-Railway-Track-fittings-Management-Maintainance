@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>QR Scan – Railway System</title>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<style>
+body { font-family:Segoe UI; padding:20px; }
+#reader { width:300px; margin:auto; }
+</style>
+</head>
+
+<body>
+
+<h2>Scan Fitting QR Code</h2>
+
+<div id="reader"></div>
+
+<div id="result"></div>
+
+<script>
+function onScanSuccess(decodedText){
+    fetch(`/api/scan/lookup/${decodedText}`)
+    .then(r=>r.json())
+    .then(data=>{
+        if(data.error){ alert("QR not found"); return; }
+
+        document.getElementById("result").innerHTML = `
+            <h3>Fitting Details</h3>
+            <p><b>ID:</b> ${data.id}</p>
+            <p><b>Type:</b> ${data.type}</p>
+            <p><b>Location:</b> ${data.location}</p>
+
+            <h3>Inspection</h3>
+            <select id="status">
+              <option>OK</option>
+              <option>Check Needed</option>
+              <option>Replacement Due</option>
+            </select>
+
+            <textarea id="comments" rows="4" placeholder="Comments..." style="width:100%"></textarea>
+            <button onclick="saveInspection(${data.id})">Save Inspection</button>
+        `;
+    });
+}
+
+function saveInspection(id){
+    fetch("/api/scan/inspection/save", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            fitting_id:id,
+            status:status.value,
+            comments:comments.value
+        })
+    })
+    .then(r=>r.json())
+    .then(d=> alert(d.message));
+}
+
+new Html5QrcodeScanner("reader", { fps:10, qrbox:250 }).render(onScanSuccess);
+</script>
+
+</body>
+</html>
+ 
